@@ -1,9 +1,11 @@
 from bs4 import BeautifulSoup
-from urllib.request import urlopen,Request
+from urllib.request import urlopen,Request,urlretrieve
 #from selenium import webdriver
 import re
 import youtube_dl
 import sys
+import os
+import time
 
 #def seldl():
 #    """selenium stuff"""
@@ -73,7 +75,7 @@ def dl_frm_youtube(yt_lnk):
         ydl.download([yt_lnk])
     print('download success')
 
-def beescrape(searchurl,baseurl):
+def beescrape(searchurl,baseurl,song):
     """scraping in beempp3s.org"""
     req = Request(searchurl, headers={'User-Agent':'Mozilla/5.0'})
     outerurl = urlopen(req)
@@ -81,29 +83,62 @@ def beescrape(searchurl,baseurl):
     outersoup = BeautifulSoup(outerurl,'lxml')
     for i in outersoup.find_all('div',{'class':'item'},limit=5):
         for link in i.select('div > a'):
-            if link.get('href').startswith('http:'):
+            if link.get('href').startswith('http:') and re.search('remix',link.get('href'),re.IGNORECASE) is None:
                 lst.append(link.get('href'))
     print(lst)
     outerurl.close()
     for i in lst:
         innerurl = urlopen(i)
         innersoup = BeautifulSoup(innerurl,'lxml')
-        for link in find_all('a',{'id':'download-button'}):
-            print(link.get('href'))  
-    #need to test this loop   
+        for link in innersoup.find_all('a',{'id':'download-button'}):
+            if link.get('href').endswith('.mp3') and link.get('href').startswith('http:') and re.search('remix',link.get('href'),re.IGNORECASE) is None:
+                print(link.get('href'))
+                dlpath = os.path.join(os.path.expanduser('~'),'Music',song+'.mp3')
+                #print(dlpath)
+                urlretrieve(link.get('href'),dlpath)
+                return
         innerurl.close()
 
+#def mp3gooscrape(searchurl,baseurl,song):
+#    """scraping in mp3goo.com"""
+#    req = Request(searchurl, headers={'User-Agent':'Mozilla/5.0'})
+#    outerurl = urlopen(req)
+#    lst[:] = []
+#    pattern = r'remix|live|acoustic|radio|cover'
+#    outersoup = BeautifulSoup(outerurl,'lxml')
+#    for i in outersoup.find_all('div',{'class':re.compile('^actl')},limit=10):
+#        if re.search(pattern,i.find('span',{'class':'res_title'}).text,re.IGNORECASE) is None:
+#            #print(i.find('span',{'class':'res_title'}).text)
+#            lst.append(i.find('a',{'class':'btn btn-success download'}).get('href'))
+#    outerurl.close()
+#    #print(lst)
+#    for i in lst:
+#        inreq = Request(i, headers={'User-Agent':'Mozilla/5.0'})
+#        innerurl = urlopen(inreq)
+#        time.sleep(10)
+#        innerurl.close()
+#        innerurl = urlopen(inreq)
+#        innersoup = BeautifulSoup(innerurl,'lxml')
+#        print(innersoup.find('div',{'id':'btnDownload'}))
+#        for link in innersoup.find_all('a',{'class':'progress-button'}):
+#            print(link.get('href'), '--> this is bbefore if')
+#            if link.get('href').endswith('.mp3') and link.get('href').startswith('http:') and re.search(pattern,link.get('href'),re.IGNORECASE) is None:
+#                print(link.get('href'))
+#                print()
+#        innerurl.close()
+#
 
 def main():
     song = input('enter song name:')
     artist = input('enter artist name:')
-    baseurl = ['https://www.youtube.com','http://beemp3s.org']
+    baseurl = ['https://www.youtube.com','http://beemp3s.org','http://mp3goo.com']
     #searchurl = baseurl + '/results?search_query=' + song.replace(chr(32),'+') + '+' + artist.replace(chr(32),'+')
-    searchurl = baseurl[1] + '/search?query=' + song.replace(chr(32),'+') + '+' + artist.replace(chr(32),'+') + '&field=all'
-    print(searchurl)
+    #searchurl = baseurl[1] + '/search?query=' + artist.replace(chr(32),'+') + '+' + song.replace(chr(32),'+') + '&field=all'
+    searchurl = baseurl[2] + '/download/' + artist.replace(chr(32),'-') + '-' + song.replace(chr(32),'-') + '/'
+    #print(searchurl)
     #dl_frm_youtube(ytscrape(searchurl,baseurl))
-    beescrape(searchurl,baseurl)
-
+    #beescrape(searchurl,baseurl,song)
+    #mp3gooscrape(searchurl,baseurl[2],song)
 
 
 lst = []
