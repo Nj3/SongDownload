@@ -2,4 +2,4 @@
 3/7: added downloading mp3 from urlopen&youtube-dl
 3/9: completed gui part and prototype for song class
 3/21: completed scraping part for yt and beemp3.
-
+3/24: decided 2 websites is enough to scrape

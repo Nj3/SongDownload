@@ -7,38 +7,7 @@ import sys
 import os
 import time
 
-#def seldl():
-#    """selenium stuff"""
-#    site ='http://beemp3s.org/'
-#    #req = Request(site, headers={'User-Agent':'Mozilla/5.0'})
-#    #print(req)
-#    #params = {query:in the end}
-#    #post_args = urlencode(params)
-#    #tmp = urlopen(req,post_args)
-#    search_query = 'http://beemp3s.org/search?'
-#    driver = webdriver.PhantomJS()
-#    driver.get(site)
-#
-#    sbox = driver.find_element_by_class_name('form-control')
-#    sbox.send_keys('in the end linkin park')
-#
-#    submit = driver.find_element_by_class_name('input-group-btn')
-#    submit.click()
-#    url = driver.page_source
-#    #print(tmp.read())
-#    soup = BeautifulSoup(url, 'lxml')
-#    #print(soup.body.find_all('center'))
-#    for url in soup.find_all('a'):
-#        print(url.get('href'))
-#
-#    #for i in soup.find_all('form'):
-#    #    print(i)
-#    #    print()
-#
-#    #payload = {'query':'In the End'}
-#    #r = requests.post(req, params=payload)
-#     #print(r.text)
-#    
+    
 
 def ytscrape(searchurl,baseurl):
     """normal scraping"""
@@ -98,35 +67,6 @@ def beescrape(searchurl,baseurl,song):
                 urlretrieve(link.get('href'),dlpath)
                 return
         innerurl.close()
-
-#def mp3gooscrape(searchurl,baseurl,song):
-#    """scraping in mp3goo.com"""
-#    req = Request(searchurl, headers={'User-Agent':'Mozilla/5.0'})
-#    outerurl = urlopen(req)
-#    lst[:] = []
-#    pattern = r'remix|live|acoustic|radio|cover'
-#    outersoup = BeautifulSoup(outerurl,'lxml')
-#    for i in outersoup.find_all('div',{'class':re.compile('^actl')},limit=10):
-#        if re.search(pattern,i.find('span',{'class':'res_title'}).text,re.IGNORECASE) is None:
-#            #print(i.find('span',{'class':'res_title'}).text)
-#            lst.append(i.find('a',{'class':'btn btn-success download'}).get('href'))
-#    outerurl.close()
-#    #print(lst)
-#    for i in lst:
-#        inreq = Request(i, headers={'User-Agent':'Mozilla/5.0'})
-#        innerurl = urlopen(inreq)
-#        time.sleep(10)
-#        innerurl.close()
-#        innerurl = urlopen(inreq)
-#        innersoup = BeautifulSoup(innerurl,'lxml')
-#        print(innersoup.find('div',{'id':'btnDownload'}))
-#        for link in innersoup.find_all('a',{'class':'progress-button'}):
-#            print(link.get('href'), '--> this is bbefore if')
-#            if link.get('href').endswith('.mp3') and link.get('href').startswith('http:') and re.search(pattern,link.get('href'),re.IGNORECASE) is None:
-#                print(link.get('href'))
-#                print()
-#        innerurl.close()
-#
 
 def main():
     song = input('enter song name:')
