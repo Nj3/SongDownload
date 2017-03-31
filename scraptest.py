@@ -6,13 +6,31 @@ import sys
 import os
 import time
 
+class MyLogger(object):
+    def debug(self, msg):
+        pass
     
+    def warning(self, msg):
+        print('warning msg: ', msg)
+
+    def error(self, msg):        
+        print('error msg: ', msg)
+
+def my_hook(d):
+    if d['status'] == 'finished':
+        print('download completed - now converting')
+        songfile = os.path.abspath(d['filename']).replace('.webm','.mp3')
+        print('new path is %s'%songfile)
+        if os.path.exists(songfile):
+            print('converted successfully')
+            sys.exit(0)
 
 def ytscrape(searchurl,baseurl):
     """normal scraping"""
     req = Request(searchurl, headers={'User-Agent':'Mozilla/5.0'})
     lst[:] = []
     url = urlopen(req)
+    soup = BeautifulSoup(url, 'lxml')
     for i in soup.find_all('div',{'class':['yt-lockup-content','yt-lockup-meta-info']},limit=10):
         for link,views in zip(i.select('h3 > a'),i.select('ul > li')):
             if views is not None and views.next_sibling is not None:
@@ -23,23 +41,20 @@ def ytscrape(searchurl,baseurl):
     url.close()
     return lst[-1][0]
 
-def dl_frm_youtube(yt_lnk):
+def dl_frm_youtube(yt_lnk,dlpath):
     """passes the youtube url of the song. it extracts audio alone and saves it
     in local.
-    dl_url : youtube url for song which is priortised based on channel/views.
+    yt_lnk : youtube url for song which is priortised based on channel/views.
     """
-    if sys.platform == 'Windows':
-        dlpath = r'C:\Downloads\%(title)s.%(ext)s'
-    else:
-        dlpath = r'~/Music/%(title)s.%(ext)s'
-    ydl_opts = {'format':'bestaudio/best','outtmpl':dlpath,'postprocessors':[{'key':'FFmpegExtractAudio','preferredcodec':'mp3','preferredquality':'192',}]}
+    ydl_opts = {'format':'bestaudio/best','outtmpl':dlpath+'\\%(title)s.%(ext)s','postprocessors':[{'key':'FFmpegExtractAudio','preferredcodec':'mp3','preferredquality':'192',}],'logger': MyLogger(), 'progress_hooks':[my_hook],}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([yt_lnk])
-    print('download success')
 
-def beescrape(searchurl,baseurl,song):
-    """scraping in beempp3s.org"""
+
+def beescrape(searchurl,baseurl,song,dlpath):
+    """scraping in beemp3s.org"""
     req = Request(searchurl, headers={'User-Agent':'Mozilla/5.0'})
+    print('inside beescrape now')
     outerurl = urlopen(req)
     lst[:] = []
     outersoup = BeautifulSoup(outerurl,'lxml')
@@ -53,23 +68,29 @@ def beescrape(searchurl,baseurl,song):
         innersoup = BeautifulSoup(innerurl,'lxml')
         for link in innersoup.find_all('a',{'id':'download-button'}):
             if link.get('href').endswith('.mp3') and link.get('href').startswith('http:') and re.search('remix',link.get('href'),re.IGNORECASE) is None:
-                dlpath = os.path.join(os.path.expanduser('~'),'Music',song+'.mp3')
-                urlretrieve(link.get('href'),dlpath)
-                return
-        innerurl.close()
+                urlretrieve(link.get('href'),dlpath+'\\'+song+'.mp3')
+                if os.path.isfile(dlpath+'\\'+song+'.mp3'):
+                    sys.exit(0)
+            innerurl.close()                    
 
 def main():
     song = input('enter song name:')
     artist = input('enter artist name:')
     baseurl = ['https://www.youtube.com','http://beemp3s.org']
-    searchurl = [baseurl[0] + '/results?search_query=' + song.replace(chr(32),'+')
-                 + '+' + artist.replace(chr(32),'+'),baseurl[1] +
-                 '/search?query=' + artist.replace(chr(32),'+') + '+' +
-                 song.replace(chr(32),'+') + '&field=all']
-    scrapeit=[dl_frm_youtube(ytscrape(searchurl[0],baseurl[0])), beescrape(searchurl[1],baseurl[1],song)]
-    for i in range(2):
-        scrapeit[i]
-    
+    if sys.platform == 'win32':
+        dlpath = os.path.join(os.environ['USERPROFILE'],'Music','spd')
+        if not os.path.exists(dlpath):
+            os.mkdir(dlpath)
+    else:
+        dlpath = '~/Music/' + song + '.mp3'
+    searchurl = [baseurl[0] + '/results?search_query=' + '+' + artist.replace(chr(32),'+') + '+' + song.replace(chr(32),'+'), baseurl[1] +'/search?query=' + artist.replace(chr(32),'+') + '+' +song.replace(chr(32),'+') + '&field=all']
+    ytargs = (ytscrape(searchurl[0],baseurl[0]),dlpath)
+    beeargs = (searchurl[1],baseurl[1],song,dlpath)
+    args = [ytargs, beeargs]
+    scrapeit = [dl_frm_youtube, beescrape]
+    for func,arg in zip(scrapeit,args):
+        func(*arg)
+
 
 lst = []
 main()
