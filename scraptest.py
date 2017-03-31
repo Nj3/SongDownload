@@ -4,7 +4,6 @@ import re
 import youtube_dl
 import sys
 import os
-import time
 
 class MyLogger(object):
     def debug(self, msg):
@@ -15,15 +14,6 @@ class MyLogger(object):
 
     def error(self, msg):        
         print('error msg: ', msg)
-
-def my_hook(d):
-    if d['status'] == 'finished':
-        print('download completed - now converting')
-        songfile = os.path.abspath(d['filename']).replace('.webm','.mp3')
-        print('new path is %s'%songfile)
-        if os.path.exists(songfile):
-            print('converted successfully')
-            sys.exit(0)
 
 def ytscrape(searchurl,baseurl):
     """normal scraping"""
@@ -46,15 +36,20 @@ def dl_frm_youtube(yt_lnk,dlpath):
     in local.
     yt_lnk : youtube url for song which is priortised based on channel/views.
     """
-    ydl_opts = {'format':'bestaudio/best','outtmpl':dlpath+'\\%(title)s.%(ext)s','postprocessors':[{'key':'FFmpegExtractAudio','preferredcodec':'mp3','preferredquality':'192',}],'logger': MyLogger(), 'progress_hooks':[my_hook],}
+    ydl_opts = {'format':'bestaudio/best','outtmpl':dlpath+'\\%(title)s.%(ext)s','postprocessors':[{'key':'FFmpegExtractAudio','preferredcodec':'mp3','preferredquality':'192',}],'logger': MyLogger()}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([yt_lnk])
-
+        #ydl.download([yt_lnk])
+        info = ydl.extract_info(yt_lnk, download=True)
+        songname = info.get('title', None)
+        #print(songname)
+        if os.path.isfile(dlpath+'\\'+songname+'.mp3'):
+            #print('found')
+            sys.exit(0)
 
 def beescrape(searchurl,baseurl,song,dlpath):
     """scraping in beemp3s.org"""
     req = Request(searchurl, headers={'User-Agent':'Mozilla/5.0'})
-    print('inside beescrape now')
+    #print('inside beescrape now')
     outerurl = urlopen(req)
     lst[:] = []
     outersoup = BeautifulSoup(outerurl,'lxml')
