@@ -3,3 +3,5 @@
 3/9: completed gui part and prototype for song class
 3/21: completed scraping part for yt and beemp3.
 3/24: decided 2 websites is enough to scrape
+4/1: completed english songs scrape and added it in main
+4/3: started version2.0 (tamil songs scrape)
