@@ -5,3 +5,4 @@
 3/24: decided 2 websites is enough to scrape
 4/1: completed english songs scrape and added it in main
 4/3: started version2.0 (tamil songs scrape)
+4/8: finished tamil songs scrape(may add youtube later) . planning to include a logging part to printout error file.
