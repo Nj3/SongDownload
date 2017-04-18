@@ -1,15 +1,15 @@
 #! /usr/bin/env python3
 
 #---------------------------importing libraries------------------------------#
+import os
+import tkinter as tk
+import sys
 
 from bs4 import BeautifulSoup
 from urllib.request import urlopen, urlretrieve, Request
-import os
 from urllib.error import HTTPError, URLError
 import youtube_dl
-import tkinter as tk
 import re
-import sys
 import google
 from selenium import webdriver
 
@@ -31,9 +31,11 @@ class Songs:
             self.lang = lang
             self.song_nm = song_nm
             self.singer = movie_name
-        self.saveloc
+        self.saveloc()
         self.dl_sites = []
-        self.sites
+        self.searchurl = []
+        self.sites()
+        self.dlpath = None
 
     def __repr__(self):
         """prints out the string representation of song object"""
@@ -49,24 +51,27 @@ class Songs:
             if not os.path.exists(dlpath):
                 os.mkdir(dlpath)
         else:
-            dlpath = os.path,join(os.path.expanduser('~'), 'Music', 'SD', self.lang, self.singer)
+            dlpath = os.path.join(os.path.expanduser('~'), 'Music', 'SD', self.lang, self.singer)
             if not os.path.exists(dlpath):
                 os.mkdir(dlpath)
         self.dlpath = dlpath
         return
-    
 
     def sites(self):
         """Based on language, sites from where we could download the songs.
         Tamil: freetamilmp3.in, youtube
         English:youtube, beemp3s.org"""
         if self.lang == 'English':
-            self.dl_sites = ['https://www.youtube.com','http://beemp3s.org']
+            self.dl_sites = ['https://www.youtube.com', 'http://beemp3s.org']
+            self.searchurl = [self.dl_sites[0] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+'), self.dl_sites[1] +'/search?query=' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+') + '&field=all']
         else:
-            self.dl_sites = ['http://freetamilmp3.in/','https://www.youtube.com']
+            self.dl_sites = ['http://freetamilmp3.in/', 'https://www.youtube.com']
+            self.searchurl = ['site:freetamilmp3.in' + self.singer + self.song_nm, self.dl_sites[1] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+')] 
         return
  
-
+    def songdl(self):
+        """Based on language selection, call two different methods to download the song"""
+        
 
 ##------------------------------------English Songs Scraping-----------------------------------#
 #

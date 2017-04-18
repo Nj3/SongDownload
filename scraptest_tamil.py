@@ -25,7 +25,7 @@ def tamildl(searchquery, dlpath, song):
                     dllink = link.get('href')
                 else:
                     dllink = urllib.parse.urljoin(baseurl,link.get('href'))
-                req = requests.get(dllink)
+                #req = requests.get(dllink)
                 urlretrieve(urllib.parse.quote(dllink,safe='/|:'), os.path.join(dlpath,song+'.mp3'))
                 if os.path.isfile(os.path.join(dlpath,song+'.mp3')):
                     sys.exit(0)
@@ -39,6 +39,7 @@ def main():
             os.mkdir(dlpath)
     else:
         dlpath = '~/Music/' + song + '.mp3'
+    searchquery = 'site:freetamilmp3.in ' + movie + song    
     tamildl(searchquery,dlpath,song)
 
 lst = []
