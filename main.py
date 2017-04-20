@@ -33,6 +33,7 @@ class Songs:
             self.singer = movie_name
         self.saveloc()
         self.dl_sites = []
+        self.url_list = []
         self.searchurl = []
         self.sites()
         self.dlpath = None
@@ -56,6 +57,62 @@ class Songs:
                 os.mkdir(dlpath)
         self.dlpath = dlpath
         return
+#------------------------------------English Songs Scraping-----------------------------------#
+
+    def ytscrape(self):
+        """searchurl will contain the url when we search in youtube. Based on that url, scraping will be done.
+        Best selection will be done based on number of views."""
+        req = Request(self.searchurl[0], headers={'User-Agent':'Mozilla/5.0'})
+        self.url_list[:] = []
+        url = urlopen(req)
+        soup = BeautifulSoup(url, 'lxml')
+        for i in soup.find_all('div',{'class':['yt-lockup-content','yt-lockup-meta-info']},limit=10):
+            for link, views in zip(i.select('h3 > a'), i.select('ul > li')):
+                if views is not None and views.next_sibling is not None:
+                    self.url_list.append([self.dl_sites[0] + link.get('href'), views.next_sibling.text])
+        for i in self.url_list:
+            i[1] = int(re.sub(r' views|,', '', i[1]))
+        self.url_list.sort(key=lambda x: x[1])
+        url.close()
+        return self.url_list[-1][0]
+
+    def dl_frm_youtube(self, yt_lnk):
+        """passes the youtube url of the song. it extracts audio alone and saves it
+        in local.
+        yt_lnk : youtube url for song which is priortised based on channel/views.
+        """
+        ydl_opts = {'format':'bestaudio/best','outtmpl':dlpath+'\\%(title)s.%(ext)s','postprocessors':[{'key':'FFmpegExtractAudio','preferredcodec':'mp3','preferredquality':'192',}]}
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            #ydl.download([yt_lnk])
+            info = ydl.extract_info(yt_lnk, download=True)
+            songname = info.get('title', None)
+            #print(songname)
+            if os.path.isfile(self.dlpath+'\\'+songname+'.mp3'):
+                #print('found')
+                return True
+
+    def beescrape(self):
+        """scraping in beemp3s.org"""
+        req = Request(self.searchurl[1], headers={'User-Agent':'Mozilla/5.0'})
+        #print('inside beescrape now')
+        outerurl = urlopen(req)
+        self.url_list[:] = []
+        outersoup = BeautifulSoup(outerurl, 'lxml')
+        for i in outersoup.find_all('div', {'class':'item'}, limit=5):
+            for link in i.select('div > a'):
+                if link.get('href').startswith('http:') and re.search('remix',link.get('href'),re.IGNORECASE) is None:
+                    self.url_list.append(link.get('href'))
+        outerurl.close()
+        for i in self.url_list:
+            innerurl = urlopen(i)
+            innersoup = BeautifulSoup(innerurl, 'lxml')
+            for link in innersoup.find_all('a', {'id':'download-button'}):
+                if link.get('href').endswith('.mp3') and link.get('href').startswith('http:') and re.search('remix',link.get('href'),re.IGNORECASE) is None:
+                    urlretrieve(link.get('href'), self.dlpath+'\\'+ self.song_nm + '.mp3')
+                    if os.path.isfile(self.dlpath + '\\' + self.song_nm + '.mp3'):
+                        return True
+                innerurl.close()
+
 
     def sites(self):
         """Based on language, sites from where we could download the songs.
@@ -64,80 +121,18 @@ class Songs:
         if self.lang == 'English':
             self.dl_sites = ['https://www.youtube.com', 'http://beemp3s.org']
             self.searchurl = [self.dl_sites[0] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+'), self.dl_sites[1] +'/search?query=' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+') + '&field=all']
+            scrapeit = [self.dl_frm_youtube(self.ytscrape()), self.beescrape()]
+            for fn in scrapeit:
+                flag = fn()
+                if flag:
+                    print('song downloaded successfully')
+                    break
         else:
             self.dl_sites = ['http://freetamilmp3.in/', 'https://www.youtube.com']
-            self.searchurl = ['site:freetamilmp3.in' + self.singer + self.song_nm, self.dl_sites[1] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+')] 
+            self.searchurl = ['site:freetamilmp3.in' + self.singer + self.song_nm, self.dl_sites[1] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+')]
+            #call tamil songs scrape
         return
- 
-    def songdl(self):
-        """Based on language selection, call two different methods to download the song"""
-        
 
-##------------------------------------English Songs Scraping-----------------------------------#
-#
-#class MyLogger(object):
-#    def debug(self, msg):
-#        pass
-#    
-#    def warning(self, msg):
-#        print('warning msg: ', msg)
-#
-#    def error(self, msg):        
-#        print('error msg: ', msg)
-#
-#def ytscrape(searchurl,baseurl):
-#    """normal scraping"""
-#    req = Request(searchurl, headers={'User-Agent':'Mozilla/5.0'})
-#    lst[:] = []
-#    url = urlopen(req)
-#    soup = BeautifulSoup(url, 'lxml')
-#    for i in soup.find_all('div',{'class':['yt-lockup-content','yt-lockup-meta-info']},limit=10):
-#        for link,views in zip(i.select('h3 > a'),i.select('ul > li')):
-#            if views is not None and views.next_sibling is not None:
-#                lst.append([baseurl+link.get('href'),views.next_sibling.text])
-#    for i in lst:
-#        i[1] = int(re.sub(r' views|,','',i[1]))
-#    lst.sort(key = lambda x:x[1])
-#    url.close()
-#    return lst[-1][0]
-#
-#def dl_frm_youtube(yt_lnk,dlpath):
-#    """passes the youtube url of the song. it extracts audio alone and saves it
-#    in local.
-#    yt_lnk : youtube url for song which is priortised based on channel/views.
-#    """
-#    ydl_opts = {'format':'bestaudio/best','outtmpl':dlpath+'\\%(title)s.%(ext)s','postprocessors':[{'key':'FFmpegExtractAudio','preferredcodec':'mp3','preferredquality':'192',}],'logger': MyLogger()}
-#    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-#        #ydl.download([yt_lnk])
-#        info = ydl.extract_info(yt_lnk, download=True)
-#        songname = info.get('title', None)
-#        #print(songname)
-#        if os.path.isfile(dlpath+'\\'+songname+'.mp3'):
-#            #print('found')
-#            sys.exit(0)
-#
-#def beescrape(searchurl,baseurl,song,dlpath):
-#    """scraping in beemp3s.org"""
-#    req = Request(searchurl, headers={'User-Agent':'Mozilla/5.0'})
-#    #print('inside beescrape now')
-#    outerurl = urlopen(req)
-#    lst[:] = []
-#    outersoup = BeautifulSoup(outerurl,'lxml')
-#    for i in outersoup.find_all('div',{'class':'item'},limit=5):
-#        for link in i.select('div > a'):
-#            if link.get('href').startswith('http:') and re.search('remix',link.get('href'),re.IGNORECASE) is None:
-#                lst.append(link.get('href'))
-#    outerurl.close()
-#    for i in lst:
-#        innerurl = urlopen(i)
-#        innersoup = BeautifulSoup(innerurl,'lxml')
-#        for link in innersoup.find_all('a',{'id':'download-button'}):
-#            if link.get('href').endswith('.mp3') and link.get('href').startswith('http:') and re.search('remix',link.get('href'),re.IGNORECASE) is None:
-#                urlretrieve(link.get('href'),dlpath+'\\'+song+'.mp3')
-#                if os.path.isfile(dlpath+'\\'+song+'.mp3'):
-#                    sys.exit(0)
-#            innerurl.close()                    
-#
 #def main():
 #    song = input('enter song name:')
 #    artist = input('enter artist name:')
