@@ -5,13 +5,13 @@ import os
 import tkinter as tk
 import sys
 import urllib.parse
+import re
+from selenium import webdriver
 from urllib.request import urlopen, urlretrieve, Request
 from bs4 import BeautifulSoup
-from urllib.error import HTTPError, URLError
+#from urllib.error import HTTPError, URLError
 import youtube_dl
-import re
 import google
-from selenium import webdriver
 
 #----------------------------class declaration------------------------------------#
 class Songs(object):
@@ -50,15 +50,16 @@ class Songs(object):
         if sys.platform == 'win32':
             dlpath = os.path.join(os.environ['USERPROFILE'], 'Music', 'SD', self.lang, self.singer)
             if not os.path.exists(dlpath):
-                os.mkdir(dlpath)
+                os.makedirs(dlpath)
         else:
             dlpath = os.path.join(os.path.expanduser('~'), 'Music', 'SD', self.lang, self.singer)
             if not os.path.exists(dlpath):
-                os.mkdir(dlpath)
+                os.makedirs(dlpath)
         self.dlpath = dlpath
         return
 #------------------------------------English Songs Scraping-----------------------------------#
-
+# hav to change scrape part to pick only the song which is relevant . Testing:
+    # in the end - linkin park
     def ytscrape(self):
         """searchurl will contain the url when we search in youtube. Based on that url, scraping will be done.
         Best selection will be done based on number of views."""
@@ -178,7 +179,7 @@ class Songs(object):
             self.searchurl = [self.dl_sites[0] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+'), self.dl_sites[1] +'/search?query=' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+') + '&field=all']
             scrapeit = [self.dl_frm_youtube(self.ytscrape()), self.beescrape()]
             for fn in scrapeit:
-                flag = fn()
+                flag = fn
                 if flag:
                     print('song downloaded successfully')
                     break
@@ -188,7 +189,7 @@ class Songs(object):
             #call tamil songs scrape
             scrapeit = [self.tamildl(), self.dl_frm_youtube_tamil(self.ytscrape_tamil())]
             for fn in scrapeit:
-                flag = fn()
+                flag = fn
                 if flag:
                     print('song downloaded successfully')
                     break
@@ -199,10 +200,10 @@ def main(lang, song, mov, artist):
     """this function is the main controller for calling different function"""
     print('successfully called main fn %s,%s,%s,%s'%(lang, song, mov, artist))
     if lang == 'English':
-        song_Args = [lang, song, None, artist]
+        song_args = [lang, song, None, artist]
     else:
-        song_Args = [lang, song, mov, None]
-    mp3_song = Songs(*song_Args)
+        song_args = [lang, song, mov, None]
+    mp3_song = Songs(*song_args)
     mp3_song.sites()
 
 
@@ -239,7 +240,7 @@ class SongUI(tk.Frame): #pylint: disable=too-many-ancestors
             #set language back to variable so that we can use it later.
             self.langvar.set(value)
             
-            #song row 
+            #song row
             self.lbl_song.grid(row=1, column=0, sticky=tk.E, pady=(20, 0))
             self.entry_song.grid(row=1, column=1, columnspan=2, pady=(20, 0))
             
@@ -288,4 +289,3 @@ root = tk.Tk()
 root.resizable(width=False, height=False)
 app = SongUI(master=root)
 app.mainloop()
-
