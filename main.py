@@ -58,8 +58,7 @@ class Songs(object):
         self.dlpath = dlpath
         return
 #------------------------------------English Songs Scraping-----------------------------------#
-# hav to change scrape part to pick only the song which is relevant . Testing:
-    # in the end - linkin park
+
     def ytscrape(self):
         """searchurl will contain the url when we search in youtube. Based on that url, scraping will be done.
         Best selection will be done based on number of views."""
@@ -69,7 +68,7 @@ class Songs(object):
         soup = BeautifulSoup(url, 'lxml')
         for i in soup.find_all('div', {'class':['yt-lockup-content','yt-lockup-meta-info']}, limit=10):
             for link, views in zip(i.select('h3 > a'), i.select('ul > li')):
-                if views is not None and views.next_sibling is not None:
+                if views is not None and views.next_sibling is not None and re.search(self.song_nm, link.text, re.IGNORECASE) is not None:
                     self.url_list.append([self.dl_sites[0] + link.get('href'), views.next_sibling.text])
         for i in self.url_list:
             i[1] = int(re.sub(r' views|,', '', i[1]))
@@ -92,7 +91,7 @@ class Songs(object):
                 #print('found')
                 return True
 
-    def beescrape(self):
+    def beescrape(self, dummy_arg):
         """scraping in beemp3s.org"""
         req = Request(self.searchurl[1], headers={'User-Agent':'Mozilla/5.0'})
         #print('inside beescrape now')
@@ -116,8 +115,9 @@ class Songs(object):
 
 #----------------------------------------------Tamil songs------------------------------------------------#
 
-    def tamildl(self):
+    def tamildl(self, dummy_arg):
         """custom search in google using `site:freetamilmp3.in` trick"""
+        #print('tamildl is called')
         baseurl = 'http://freetamilmp3.in/'
         self.url_list[:] = []
         for url in google.search(self.searchurl[0], tld='co.in', lang='eng', start=0, stop=5):
@@ -135,7 +135,9 @@ class Songs(object):
                         dllink = urllib.parse.urljoin(baseurl, link.get('href'))
                     #req = requests.get(dllink)
                     urlretrieve(urllib.parse.quote(dllink,safe='/|:'), os.path.join(self.dlpath, self.song_nm + '.mp3'))
+                    #print('song downloaded and available in the path', os.path.join(self.dlpath, self.song_nm + '.mp3'))
                     if os.path.isfile(os.path.join(self.dlpath, self.song_nm + '.mp3')):
+                        #print('song found')
                         return True
 
     def ytscrape_tamil(self):
@@ -147,7 +149,7 @@ class Songs(object):
         soup = BeautifulSoup(url, 'lxml')
         for i in soup.find_all('div', {'class':['yt-lockup-content','yt-lockup-meta-info']}, limit=10):
             for link, views in zip(i.select('h3 > a'), i.select('ul > li')):
-                if views is not None and views.next_sibling is not None:
+                if views is not None and views.next_sibling is not None and re.search(self.song_nm, link.text, re.IGNORECASE) is not None:
                     self.url_list.append([self.dl_sites[1] + link.get('href'), views.next_sibling.text])
         for i in self.url_list:
             i[1] = int(re.sub(r' views|,', '', i[1]))
@@ -174,26 +176,37 @@ class Songs(object):
         """Based on language, sites from where we could download the songs.
         Tamil: freetamilmp3.in, youtube
         English:youtube, beemp3s.org"""
+        print('control is inside song class sites method')
         if self.lang == 'English':
+            #print('control went to english songs dl part based on selection')
+            flag = False
             self.dl_sites = ['https://www.youtube.com', 'http://beemp3s.org']
             self.searchurl = [self.dl_sites[0] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+'), self.dl_sites[1] +'/search?query=' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+') + '&field=all']
-            scrapeit = [self.dl_frm_youtube(self.ytscrape()), self.beescrape()]
-            for fn in scrapeit:
-                flag = fn
+            scrapeit = [self.dl_frm_youtube, self.beescrape]
+            scrap_args = [self.ytscrape(), None]
+            for fn, arg in zip(scrapeit, scrap_args):
+                flag = fn(arg)
+                if flag:
+                    print('song downloaded successfully')
+                    break
+        elif self.lang == 'Tamil':
+            #print('control went to tamil songs dl part based on selection')
+            flag = False
+            #print('before calling fn is ', flag)
+            self.dl_sites = ['http://freetamilmp3.in/', 'https://www.youtube.com']
+            self.searchurl = ['site:freetamilmp3.in' + ' ' + self.singer + ' ' + self.song_nm, self.dl_sites[1] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+')]
+            #call tamil songs scrape
+            scrapeit = [self.tamildl, self.dl_frm_youtube_tamil]
+            scrap_args = [None, self.ytscrape_tamil()]
+            for fn, arg in zip(scrapeit, scrap_args):
+                flag = fn(arg)
+                #print('after calling the fn , teh value of flag is %s'%(flag))
                 if flag:
                     print('song downloaded successfully')
                     break
         else:
-            self.dl_sites = ['http://freetamilmp3.in/', 'https://www.youtube.com']
-            self.searchurl = ['site:freetamilmp3.in' + self.singer + self.song_nm, self.dl_sites[1] + '/results?search_query=' + '+' + self.singer.replace(chr(32),'+') + '+' + self.song_nm.replace(chr(32),'+')]
-            #call tamil songs scrape
-            scrapeit = [self.tamildl(), self.dl_frm_youtube_tamil(self.ytscrape_tamil())]
-            for fn in scrapeit:
-                flag = fn
-                if flag:
-                    print('song downloaded successfully')
-                    break
-        return
+            print('language not found')
+            return
 
 
 def main(lang, song, mov, artist):
@@ -236,7 +249,7 @@ class SongUI(tk.Frame): #pylint: disable=too-many-ancestors
         def usr_selection(value):
             """This function will get triggered after user select a value in drop down.
             Based on this value, it will create widgets"""
-            print(value)
+            #print(value)
             #set language back to variable so that we can use it later.
             self.langvar.set(value)
             
@@ -282,7 +295,7 @@ class SongUI(tk.Frame): #pylint: disable=too-many-ancestors
     def printsong(self):
         """Just to check whether all variables are set correctly and call the main fn to start download"""
         print('GUI working successfully')
-        print(self.entry_song.get(), self.entry_movie.get(), self.entry_artist.get())
+        #print(self.entry_song.get(), self.entry_movie.get(), self.entry_artist.get())
         main(self.langvar.get(),self.entry_song.get(), self.entry_movie.get(), self.entry_artist.get())
 
 root = tk.Tk()

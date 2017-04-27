@@ -7,3 +7,4 @@
 4/3: started version2.0 (tamil songs scrape)
 4/8: finished tamil songs scrape(may add youtube later) . planning to include a logging part to printout error file.
 4/9: added the tamil scrape in main.py. Refactoring left. Possible addition of logging is also possible after refactored.
+4/26: refactoring completed. double download issue is happening again. need to resolve that. problem is occurring when trying to call a function stored in a list
