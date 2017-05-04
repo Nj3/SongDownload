@@ -9,6 +9,7 @@ import re
 from selenium import webdriver
 from urllib.request import urlopen, urlretrieve, Request
 from bs4 import BeautifulSoup
+from tkinter import messagebox
 #from urllib.error import HTTPError, URLError
 import youtube_dl
 import google
@@ -187,7 +188,8 @@ class Songs(object):
             for fn, arg in zip(scrapeit, scrap_args):
                 flag = fn(arg)
                 if flag:
-                    print('song downloaded successfully')
+                    messagebox.showinfo('Songdl', 'song downloaded successfully')
+                    #print('song downloaded successfully')
                     break
         elif self.lang == 'Tamil':
             #print('control went to tamil songs dl part based on selection')
@@ -202,7 +204,8 @@ class Songs(object):
                 flag = fn(arg)
                 #print('after calling the fn , teh value of flag is %s'%(flag))
                 if flag:
-                    print('song downloaded successfully')
+                    messagebox.showinfo('Songdl', 'song downloaded successfully')
+                    #print('song downloaded successfully')
                     break
         else:
             print('language not found')
