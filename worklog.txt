@@ -10,3 +10,4 @@
 4/26: refactoring completed. double download issue is happening again. need to resolve that. problem is occurring when trying to call a function stored in a list
 5/4: fixed a bug where the .exe closes by itself.
 11/19: updated documentation and removed 1 print statment.
+11/20: Identified issue.
